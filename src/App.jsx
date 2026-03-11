@@ -53,7 +53,7 @@ const App = () => {
       
       {/* 1. 헤더 - 간격 대폭 축소 */}
       <header className="py-2 text-center">
-        <h1 className="text-xl font-black text-blue-900 tracking-tighter italic">BIBLE MEMORY</h1>
+        <h1 className="text-xl font-black text-blue-900 tracking-tighter italic">꿀송이 말씀 암송 대회</h1>
       </header>
 
       {/* 2. 단계 선택 - 패딩 축소 */}
