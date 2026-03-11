@@ -61,7 +61,7 @@ const App = () => {
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col p-4 font-sans bg-slate-50 text-slate-900 select-none">
       <header className="py-6 text-center">
-        <h1 className="text-2xl font-black text-blue-900 tracking-tighter italic">BIBLE MEMORY</h1>
+        <h1 className="text-2xl font-black text-blue-900 tracking-tighter italic">꿀송이 암송대회</h1>
       </header>
 
       {/* 1. 단계 선택 */}
