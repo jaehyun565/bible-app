@@ -140,20 +140,24 @@ const App = () => {
                   )}
                 </div>
                 
-                <div className="flex-grow flex items-center justify-center w-full text-center overflow-y-auto px-2">
-                  {mode === 'memorize' ? (
-                    isHoldingAnswer ? (
-                      <p className="text-[1.15rem] font-bold leading-relaxed text-[#D97706] break-keep animate-pulse">
+                {/* 중앙: 말씀 구절 영역 - 스크롤 로직 개선 */}
+                <div className="flex-grow w-full overflow-y-auto px-2 flex flex-col items-center">
+                  {/* m-auto를 주면 내용이 짧을 땐 중앙에, 길어서 넘치면 위쪽부터 붙습니다. */}
+                  <div className="m-auto w-full text-center py-4">
+                    {mode === 'memorize' ? (
+                      isHoldingAnswer ? (
+                        <p className="text-[1.15rem] font-bold leading-relaxed text-[#D97706] break-keep animate-pulse">
+                          {displayVerses[currentIndex]?.content}
+                        </p>
+                      ) : (
+                        <p className="text-[#D97706]/40 italic text-sm font-medium">꿀송이보다 달콤한 말씀을 암송해보세요</p>
+                      )
+                    ) : (
+                      <p className="text-[1.15rem] font-bold leading-relaxed text-[#451A03] break-keep">
                         {displayVerses[currentIndex]?.content}
                       </p>
-                    ) : (
-                      <p className="text-[#D97706]/40 italic text-sm font-medium">꿀송이보다 달콤한 말씀을 암송해보세요</p>
-                    )
-                  ) : (
-                    <p className="text-[1.15rem] font-bold leading-relaxed text-[#451A03] break-keep">
-                      {displayVerses[currentIndex]?.content}
-                    </p>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {mode !== 'view' && (
