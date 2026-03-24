@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Eye, BookOpen, Search, CheckCircle2, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, BookOpen, Search, CheckCircle2, RefreshCw, Bookmark } from 'lucide-react';
 import versesData from './data/verses.json';
 
 const shuffleArray = (array) => {
@@ -13,12 +13,16 @@ const shuffleArray = (array) => {
 };
 
 const App = () => {
-  const [step, setStep] = useState(1);
+  const getInitialStep = () => Number(localStorage.getItem('honey-bible-step')) || 1;
+  const getInitialVerseId = () => Number(localStorage.getItem('honey-bible-last-id')) || null;
+
+  const [step, setStep] = useState(getInitialStep);
   const [mode, setMode] = useState('view');
   const [practiceScope, setPracticeScope] = useState('current');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHoldingAnswer, setIsHoldingAnswer] = useState(false);
   const [displayVerses, setDisplayVerses] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     let filtered = [];
@@ -31,9 +35,31 @@ const App = () => {
       filtered = shuffleArray(filtered);
     }
     setDisplayVerses(filtered);
-    setCurrentIndex(0);
+
+      // 처음 로드될 때(isLoaded가 false일 때)만 실행
+    if (!isLoaded && mode === 'view') {
+      const lastId = getInitialVerseId();
+      if (lastId) {
+        // 저장된 ID가 현재 리스트의 몇 번째 인덱스인지 찾음
+        const lastIndex = filtered.findIndex(v => v.id === lastId);
+        if (lastIndex !== -1) {
+          setCurrentIndex(lastIndex); // 찾았으면 그 위치로 이동
+        }
+      }
+      setIsLoaded(true); // 이제 위치를 잡았으니 true로 변경 (다음 단계 클릭 시엔 0번으로 가도록)
+    } else {
+      setCurrentIndex(0); // 평소 단계 변경 시엔 0번부터
+    }
     setIsHoldingAnswer(false);
   }, [mode, step, practiceScope]);
+
+// --- [책갈피 로직] 구절이 바뀔 때마다 로컬스토리지에 저장 ---
+  useEffect(() => {
+    if (displayVerses[currentIndex]) {
+      localStorage.setItem('honey-bible-step', step);
+      localStorage.setItem('honey-bible-last-id', displayVerses[currentIndex].id);
+    }
+  }, [currentIndex, step, displayVerses]);
 
   const nextVerse = () => {
     if (displayVerses.length === 0) return;
@@ -54,6 +80,11 @@ const App = () => {
         <div className="flex items-center gap-1">
           <span className="text-2xl">🍯</span>
           <h1 className="text-xl font-black text-[#854D0E] tracking-tight">꿀송이 말씀 암송 대회</h1>
+        </div>
+        {/* 책갈피 표시 아이콘 (안내용) */}
+        <div className="absolute right-2 top-2 text-[#F59E0B] opacity-50 flex items-center gap-1">
+           <Bookmark size={14} fill="currentColor" />
+           <span className="text-[10px] font-bold">북마크 자동저장</span>
         </div>
       </header>
 
