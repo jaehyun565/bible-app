@@ -35,15 +35,30 @@ const App = () => {
   const displayVerses = useMemo(() => {
     let filtered = [];
     if (mode === 'view') {
-      filtered = versesData.filter(v => v.step === step).sort((a, b) => a.id - b.id);
+    // 보기 모드: 현재 선택한 단계가 step 배열 안에 포함되어 있는지 확인
+    filtered = versesData.filter(v => {
+      const steps = Array.isArray(v.step) ? v.step : [v.step]; // 숫자로 되어있을 경우를 대비한 방어 코드
+      return steps.includes(step);
+    }).sort((a, b) => a.id - b.id);
+  } else {
+    // 암송/구절맞추기 모드
+    if (practiceScope === 'current') {
+      // 이 단계만: 현재 단계가 포함된 것만
+      filtered = versesData.filter(v => {
+        const steps = Array.isArray(v.step) ? v.step : [v.step];
+        return steps.includes(step);
+      });
     } else {
-      filtered = practiceScope === 'current' 
-        ? versesData.filter(v => v.step === step)
-        : versesData.filter(v => v.step >= 1 && v.step <= step);
-      filtered = shuffleArray(filtered); // 랜덤 셔플
+      // 누적 단계: 배열 안의 어떤 숫자라도 현재 단계보다 작거나 같으면 포함
+      filtered = versesData.filter(v => {
+        const steps = Array.isArray(v.step) ? v.step : [v.step];
+        return steps.some(s => s >=1 && s <= step);
+      });
     }
-    return filtered;
-  }, [mode, step, practiceScope]);
+    filtered = shuffleArray(filtered);
+  }
+  return filtered;
+}, [mode, step, practiceScope]);
 
    // --- 4. 이벤트 핸들러 (setState 에러 방지의 핵심) ---
   // 리액트 규칙: useEffect 안에서 인덱스를 0으로 바꾸지 말고, 클릭 시점에 바꿉니다.
