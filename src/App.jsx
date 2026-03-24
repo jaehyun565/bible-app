@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Eye, BookOpen, Search, CheckCircle2, RefreshCw, Bookmark } from 'lucide-react';
 import versesData from './data/verses.json';
 
@@ -12,19 +12,27 @@ const shuffleArray = (array) => {
   return shuffled;
 };
 
+// 브라우저 저장소에서 데이터 가져오기
+const savedStep = Number(localStorage.getItem('honey-bible-step')) || 1;
+const savedLastId = Number(localStorage.getItem('honey-bible-last-id')) || null;
+
 const App = () => {
-  const getInitialStep = () => Number(localStorage.getItem('honey-bible-step')) || 1;
-  const getInitialVerseId = () => Number(localStorage.getItem('honey-bible-last-id')) || null;
-
-  const [step, setStep] = useState(getInitialStep);
+  const [step, setStep] = useState(savedStep);
   const [mode, setMode] = useState('view');
-  const [practiceScope, setPracticeScope] = useState('current');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHoldingAnswer, setIsHoldingAnswer] = useState(false);
-  const [displayVerses, setDisplayVerses] = useState([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [practiceScope, setPracticeScope] = useState('current');  
+  const [isHoldingAnswer, setIsHoldingAnswer] = useState(false);    
 
-  useEffect(() => {
+  // currentIndex 초기값 설정 (새로고침 시 책갈피 위치로 바로 시작)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const initialVerses = versesData.filter(v => v.step === savedStep).sort((a, b) => a.id - b.id);
+    if (savedLastId) {
+      const idx = initialVerses.findIndex(v => v.id === savedLastId);
+      return idx !== -1 ? idx : 0;
+    }
+    return 0;
+  });
+
+  const displayVerses = useMemo(() => {
     let filtered = [];
     if (mode === 'view') {
       filtered = versesData.filter(v => v.step === step).sort((a, b) => a.id - b.id);
@@ -32,34 +40,30 @@ const App = () => {
       filtered = practiceScope === 'current' 
         ? versesData.filter(v => v.step === step)
         : versesData.filter(v => v.step >= 1 && v.step <= step);
-      filtered = shuffleArray(filtered);
+      filtered = shuffleArray(filtered); // 랜덤 셔플
     }
-    setDisplayVerses(filtered);
-
-      // 처음 로드될 때(isLoaded가 false일 때)만 실행
-    if (!isLoaded && mode === 'view') {
-      const lastId = getInitialVerseId();
-      if (lastId) {
-        // 저장된 ID가 현재 리스트의 몇 번째 인덱스인지 찾음
-        const lastIndex = filtered.findIndex(v => v.id === lastId);
-        if (lastIndex !== -1) {
-          setCurrentIndex(lastIndex); // 찾았으면 그 위치로 이동
-        }
-      }
-      setIsLoaded(true); // 이제 위치를 잡았으니 true로 변경 (다음 단계 클릭 시엔 0번으로 가도록)
-    } else {
-      setCurrentIndex(0); // 평소 단계 변경 시엔 0번부터
-    }
-    setIsHoldingAnswer(false);
+    return filtered;
   }, [mode, step, practiceScope]);
 
-// --- [책갈피 로직] 구절이 바뀔 때마다 로컬스토리지에 저장 ---
-  useEffect(() => {
-    if (displayVerses[currentIndex]) {
-      localStorage.setItem('honey-bible-step', step);
-      localStorage.setItem('honey-bible-last-id', displayVerses[currentIndex].id);
-    }
-  }, [currentIndex, step, displayVerses]);
+   // --- 4. 이벤트 핸들러 (setState 에러 방지의 핵심) ---
+  // 리액트 규칙: useEffect 안에서 인덱스를 0으로 바꾸지 말고, 클릭 시점에 바꿉니다.
+  const handleStepChange = (s) => {
+    setStep(s);
+    setCurrentIndex(0);
+    setIsHoldingAnswer(false);
+  };
+
+  const handleModeChange = (m) => {
+    setMode(m);
+    setCurrentIndex(0);
+    setIsHoldingAnswer(false);
+  };
+
+  const handleScopeChange = (scope) => {
+    setPracticeScope(scope);
+    setCurrentIndex(0);
+    setIsHoldingAnswer(false);
+  };
 
   const nextVerse = () => {
     if (displayVerses.length === 0) return;
@@ -72,6 +76,20 @@ const App = () => {
     setCurrentIndex((prev) => (prev - 1 + displayVerses.length) % displayVerses.length);
     setIsHoldingAnswer(false);
   };
+
+  const shuffleCurrent = () => {    
+    handleModeChange(mode); 
+  };
+
+
+  // --- 5. 사이드 이펙트 (데이터 저장만 담당) ---
+  useEffect(() => {
+    if (displayVerses[currentIndex]) {
+      localStorage.setItem('honey-bible-step', step);
+      localStorage.setItem('honey-bible-last-id', displayVerses[currentIndex].id);
+    }
+  }, [currentIndex, step, displayVerses]);
+
 
   return (
     <div className="max-w-md mx-auto h-[100dvh] flex flex-col p-3 font-sans bg-[#FFFDF0] text-[#451A03] select-none overflow-hidden">
@@ -93,7 +111,7 @@ const App = () => {
         {[1, 2, 3, 4, 5, 6, 7].map(s => (
           <button 
             key={s}
-            onClick={() => setStep(s)}
+            onClick={() => handleStepChange(s)}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
               step === s 
                 ? 'bg-[#F59E0B] text-white shadow-md scale-105' 
@@ -105,6 +123,7 @@ const App = () => {
         ))}
       </div>
 
+      {/* 모드 선택 */}
       <div className="flex bg-[#FEF3C7]/50 rounded-xl shadow-sm p-1 mb-2 border border-[#FDE68A]">
         {[
           { id: 'view', label: '보기', icon: <Eye size={16}/> },
@@ -113,7 +132,7 @@ const App = () => {
         ].map(m => (
           <button
             key={m.id}
-            onClick={() => setMode(m.id)}
+            onClick={() => handleModeChange(m.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all ${
               mode === m.id ? 'bg-[#451A03] text-white shadow-md' : 'text-[#92400E]'
             }`}
@@ -123,11 +142,12 @@ const App = () => {
         ))}
       </div>
 
+      {/* 범위 선택 (암송/구절맞추기 모드에서만) */}
       <div className="h-9 mb-3">
         {mode !== 'view' && (
           <div className="flex bg-[#FEF3C7]/60 rounded-lg p-0.5">
             <button
-              onClick={() => setPracticeScope('current')}
+              onClick={() => handleScopeChange('current')}
               className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${
                 practiceScope === 'current' ? 'bg-white text-[#D97706] shadow-sm' : 'text-[#B45309]'
               }`}
@@ -135,7 +155,7 @@ const App = () => {
               이 단계만
             </button>
             <button
-              onClick={() => setPracticeScope('cumulative')}
+              onClick={() => handleScopeChange('cumulative')}
               className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${
                 practiceScope === 'cumulative' ? 'bg-white text-[#D97706] shadow-sm' : 'text-[#B45309]'
               }`}
@@ -146,11 +166,12 @@ const App = () => {
         )}
       </div>
 
+      {/* 메인 카드 영역 */}
       <div className="relative flex-grow flex flex-col items-center justify-center min-h-0">
         {displayVerses.length > 0 ? (
           <>
             <AnimatePresence mode="wait">
-              <motion.div
+              <Motion.div
                 key={`${mode}-${step}-${practiceScope}-${currentIndex}`}
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -191,6 +212,7 @@ const App = () => {
                   </div>
                 </div>
 
+                {/* 하단 버튼 (암송 & 구절맞추기 모드) */}
                 {mode !== 'view' && (
                   <div className="w-full flex gap-2 mt-4">
                     <button
@@ -215,7 +237,7 @@ const App = () => {
                     </button>
                   </div>
                 )}
-              </motion.div>
+              </Motion.div>
             </AnimatePresence>
 
             <div className="mt-3 flex items-center gap-2">
@@ -223,7 +245,10 @@ const App = () => {
                 {currentIndex + 1} / {displayVerses.length}
               </div>
               {mode !== 'view' && (
-                <button onClick={() => setDisplayVerses(shuffleArray(displayVerses))} className="p-1 text-[#D97706]">
+                <button 
+                  onClick={shuffleCurrent} 
+                  className="p-1 text-[#D97706]"
+                >
                   <RefreshCw size={12} />
                 </button>
               )}
@@ -234,6 +259,7 @@ const App = () => {
         )}
       </div>
 
+      {/* 하단 네비게이션 (보기 모드 전용) */}
       {mode === 'view' && (
         <div className="flex gap-2 mt-3 mb-2">
           <button onClick={prevVerse} className="p-3 bg-white rounded-2xl shadow-sm text-[#D97706] border border-[#FEF3C7] active:bg-[#FFFBEB]">
