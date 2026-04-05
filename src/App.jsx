@@ -121,7 +121,7 @@ const App = () => {
       <header className="py-2 text-center flex flex-col items-center flex-shrink-0">
         <div className="flex items-center gap-1">
           <span className="text-2xl" role="img" aria-label="honey">🍯</span>
-          <h1 className="text-xl font-black text-[#854D0E] tracking-tight uppercase italic">Kkulsongi</h1>
+          <h1 className="text-xl font-black text-[#854D0E] tracking-tight uppercase italic">꿀송이 암송대회</h1>
         </div>
       </header>
 
