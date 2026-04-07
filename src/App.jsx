@@ -161,7 +161,7 @@ const App = () => {
               </div>
               {/* [새 기능] 암송 완료 포함 여부 */}
               <div className="flex bg-[#FEF3C7]/40 rounded-lg p-0.5 h-8">
-                <button onClick={() => handleExcludeToggle(true)} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${excludeMemorized ? 'bg-[#F59E0B] text-white' : 'text-[#B45309]'}`}>미암송만 출제</button>
+                <button onClick={() => handleExcludeToggle(true)} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${excludeMemorized ? 'bg-[#F59E0B] text-white' : 'text-[#B45309]'}`}>미완료만 출제</button>
                 <button onClick={() => handleExcludeToggle(false)} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${!excludeMemorized ? 'bg-[#F59E0B] text-white' : 'text-[#B45309]'}`}>전체 출제</button>
               </div>
             </>
