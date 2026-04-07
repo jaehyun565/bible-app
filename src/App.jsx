@@ -29,16 +29,14 @@ const App = () => {
   const [mode, setMode] = useState('view');
   const [viewType, setViewType] = useState('card');
   const [practiceScope, setPracticeScope] = useState('current');
-  const [excludeMemorized, setExcludeMemorized] = useState(true); // [새 기능] 암송 완료 제외 여부
-  const [showAnswer, setShowAnswer] = useState(false); // [변경] 정답 보기 토글
+  const [excludeMemorized, setExcludeMemorized] = useState(true); 
+  const [showAnswer, setShowAnswer] = useState(false); 
   
-  // 암송 완료된 ID 목록
   const [memorizedIds, setMemorizedIds] = useState(() => {
     const saved = getSaved('honey-bible-memorized-ids', '[]');
     try { return JSON.parse(saved); } catch { return []; }
   });
 
-  // currentIndex 초기값
   const [currentIndex, setCurrentIndex] = useState(() => {
     const s = Number(getSaved('honey-bible-step', 1));
     const lastId = Number(getSaved('honey-bible-last-id', 0));
@@ -53,7 +51,6 @@ const App = () => {
     return 0;
   });
 
-  // --- 데이터 필터링 로직 ---
   const displayVerses = useMemo(() => {
     let filtered = [];
     if (mode === 'view') {
@@ -62,10 +59,9 @@ const App = () => {
         return steps.includes(step);
       }).sort((a, b) => a.id - b.id);
     } else {
-      // 연습 모드 필터링
       const baseFilter = (v) => {
-        if (!excludeMemorized) return true; // 전체 출제면 필터 통과
-        return !memorizedIds.includes(v.id); // 제외 모드면 완료 안된 것만
+        if (!excludeMemorized) return true;
+        return !memorizedIds.includes(v.id);
       };
 
       if (practiceScope === 'current') {
@@ -84,7 +80,6 @@ const App = () => {
     return filtered;
   }, [mode, step, practiceScope, memorizedIds, excludeMemorized]);
 
-  // --- 이벤트 핸들러 ---
   const toggleMemorized = (id) => {
     setMemorizedIds(prev => {
       const newIds = prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id];
@@ -112,7 +107,6 @@ const App = () => {
 
   const shuffleCurrent = () => { handleModeChange(mode); };
 
-  // 로컬 저장
   useEffect(() => {
     if (typeof window !== 'undefined' && displayVerses[currentIndex] && mode === 'view' && viewType === 'card') {
       localStorage.setItem('honey-bible-step', step.toString());
@@ -126,7 +120,8 @@ const App = () => {
       <header className="py-2 text-center flex flex-col items-center flex-shrink-0">
         <div className="flex items-center gap-1">
           <span className="text-2xl" role="img" aria-label="honey">🍯</span>
-          <h1 className="text-xl font-black text-[#854D0E] tracking-tight italic uppercase">Kkulsongi</h1>
+          {/* 타이틀 수정: 꿀송이 암송대회 */}
+          <h1 className="text-xl font-black text-[#854D0E] tracking-tight">꿀송이 암송대회</h1>
         </div>
       </header>
 
@@ -154,12 +149,10 @@ const App = () => {
             </div>
           ) : (
             <>
-              {/* 범위 선택 */}
               <div className="flex bg-[#FEF3C7]/60 rounded-lg p-0.5 h-8">
                 <button onClick={() => handleScopeChange('current')} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${practiceScope === 'current' ? 'bg-white text-[#D97706] shadow-sm' : 'text-[#B45309]'}`}>이 단계만</button>
                 <button onClick={() => handleScopeChange('cumulative')} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${practiceScope === 'cumulative' ? 'bg-white text-[#D97706] shadow-sm' : 'text-[#B45309]'}`}>누적단계</button>
               </div>
-              {/* [새 기능] 암송 완료 포함 여부 */}
               <div className="flex bg-[#FEF3C7]/40 rounded-lg p-0.5 h-8">
                 <button onClick={() => handleExcludeToggle(true)} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${excludeMemorized ? 'bg-[#F59E0B] text-white' : 'text-[#B45309]'}`}>미완료만 출제</button>
                 <button onClick={() => handleExcludeToggle(false)} className={`flex-1 text-[10px] font-bold rounded-md transition-all ${!excludeMemorized ? 'bg-[#F59E0B] text-white' : 'text-[#B45309]'}`}>전체 출제</button>
@@ -168,10 +161,13 @@ const App = () => {
           )}
         </div>
         
-        <div className="flex items-center justify-center gap-1 text-[9px] text-[#B45309] font-medium py-1 bg-[#FEF3C7]/40 rounded-md">
-          <Info size={11} />
-          <span>{excludeMemorized && mode !== 'view' ? "암송 완료된 구절은 제외하고 출제됩니다." : "모든 구절이 순서대로/랜덤하게 출제됩니다."}</span>
-        </div>
+        {/* 안내 메시지: 보기 모드에서는 숨김 처리 */}
+        {mode !== 'view' && (
+          <div className="flex items-center justify-center gap-1 text-[9px] text-[#B45309] font-medium py-1 bg-[#FEF3C7]/40 rounded-md">
+            <Info size={11} />
+            <span>{excludeMemorized ? "암송 완료된 구절은 제외하고 출제됩니다." : "모든 구절이 순서대로/랜덤하게 출제됩니다."}</span>
+          </div>
+        )}
       </div>
 
       {/* 메인 콘텐츠 영역 */}
@@ -234,6 +230,7 @@ const App = () => {
                     <div className="w-full flex flex-col gap-2 mt-4 flex-shrink-0">
                       {mode !== 'view' ? (
                         <>
+                          {/* 정답 보기: 클릭 방식으로 유지 */}
                           <button 
                             onClick={() => setShowAnswer(!showAnswer)}
                             className={`w-full py-3 rounded-xl font-bold text-sm border-2 transition-all ${showAnswer ? 'bg-[#F59E0B] border-[#F59E0B] text-white shadow-inner' : 'bg-white border-[#F59E0B] text-[#D97706]'}`}
